@@ -17,7 +17,7 @@ struct MenuView: View {
                 ], spacing: 20) {
                     ForEach(recipes) { recipe in
                         Button {
-                            selectedTime = recipe.defaultTime
+                            selectedTime = recipe.defaultTime ?? 0
                         } label: {
                             VStack(spacing: 8) {
                                 Group {
