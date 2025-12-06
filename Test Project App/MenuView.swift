@@ -12,9 +12,11 @@ struct MenuView: View {
         NavigationStack {
             ScrollView {
                 LazyVGrid(columns: [
-                    GridItem(.flexible(), spacing: 20),
-                    GridItem(.flexible(), spacing: 20)
-                ], spacing: 20) {
+                    GridItem(.flexible(), spacing: 16),
+                    GridItem(.flexible(), spacing: 16)
+                    ],
+                    spacing: 16)
+                {
                     ForEach(recipes) { recipe in
                         Button {
                             selectedTime = recipe.defaultTime ?? 0
