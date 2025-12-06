@@ -3,7 +3,7 @@ import SwiftUI
 struct Recipe: Identifiable, Hashable {
     let id = UUID()
     let name: String
-    let defaultTime: Int?
+    let defaultTime: Int
     let imageName: String
     var description: String? = nil
     var ingredients: [String]? = nil

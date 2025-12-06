@@ -1,10 +1,3 @@
-//
-//  Item.swift
-//  Test Project App
-//
-//  Created by Алексей Чванов on 03.12.2025.
-//
-
 import Foundation
 import SwiftData
 
