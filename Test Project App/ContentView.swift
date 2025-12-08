@@ -3,16 +3,16 @@ internal import Combine
 
 struct ContentView: View {
     // Состояние таймера
-    @State private var hours: Int = 0          // Часы (0–23)
-    @State private var minutes: Int = 10         // Минуты (0–59)
-    @State private var seconds: Int = 0         // Секунды (0–59)
+    @State private var hours: Int = 0
+    @State private var minutes: Int = 10
+    @State private var seconds: Int = 0
     @State private var isTimerRunning: Bool = false
     @State private var remainingSeconds: Int = 0
+    @State private var totalSeconds: Int = 0
     @State private var showTimerAlert: Bool = false
 
-
-    // Таймер обновления интерфейса
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
 
     var body: some View {
         NavigationStack {
@@ -30,7 +30,7 @@ struct ContentView: View {
                         .font(.subheadline)
                         .foregroundColor(.secondary)
 
-                    // Трёхкомпонентный Picker: часы, минуты, секунды
+                    // Выбор времени (часы, минуты, секунды)
                     HStack {
                         Picker("", selection: $hours) {
                             ForEach(0...23, id: \.self) { hour in
@@ -46,7 +46,7 @@ struct ContentView: View {
                             }
                         }
                         .pickerStyle(.wheel)
-                        .frame(width: 80)
+                        .frame(width: 90)
 
                         Picker("", selection: $seconds) {
                             ForEach(0...59, id: \.self) { second in
@@ -58,17 +58,27 @@ struct ContentView: View {
                     }
                     .padding(.horizontal, 20)
 
-                    // Дисплей таймера
-                    Text(formatTime(remainingSeconds))
-                        .font(.system(size: 49, weight: .light))
-                        .foregroundColor(isTimerRunning ? .primary : .secondary)
-                        .padding(.vertical, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.gray.opacity(0.1))
-                        )
-                        .frame(width: 200)
+                    // Круговой индикатор (появляется только при isTimerRunning == true)
+                    if isTimerRunning {
+                        ZStack {
+                            Circle()
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 20)
+                                .frame(width: 200, height: 200)
 
+
+                            Circle()
+                                .trim(from: 0, to: progress())
+                                .stroke(style: StrokeStyle(lineWidth: 20, lineCap: .round, lineJoin: .round))
+                                .foregroundColor(progressColor())
+                                .rotationEffect(.degrees(-90))
+                                .animation(.easeOut(duration: 0.2), value: remainingSeconds)
+
+
+                            Text(formatTime(remainingSeconds))
+                                .font(.system(size: 48, weight: .light))
+                                .foregroundColor(.primary)
+                        }
+                    }
 
                     // Кнопка управления таймером
                     Button {
@@ -100,6 +110,7 @@ struct ContentView: View {
                             .foregroundColor(Color.accentColor)
                     }
 
+
                     Spacer()
                 }
                 .onReceive(timer) { _ in
@@ -117,7 +128,25 @@ struct ContentView: View {
         }
     }
 
-    // Форматирует секунды в "HH:MM:SS"
+    // Вычисляем прогресс (от 0 до 1)
+    private func progress() -> CGFloat {
+        guard totalSeconds > 0 else { return 0 }
+        return CGFloat(remainingSeconds) / CGFloat(totalSeconds)
+    }
+
+    // Определяем цвет индикатора в зависимости от прогресса
+    private func progressColor() -> Color {
+        let progressValue = progress()
+        if progressValue > 0.6 {
+            return Color.green
+        } else if progressValue > 0.3 {
+            return Color.yellow
+        } else {
+            return Color.red
+        }
+    }
+
+    // Форматируем секунды в "HH:MM:SS"
     private func formatTime(_ totalSeconds: Int) -> String {
         let hours = totalSeconds / 3600
         let minutes = (totalSeconds % 3600) / 60
@@ -125,21 +154,23 @@ struct ContentView: View {
         return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
     }
 
-    // Запускает таймер (конвертирует часы+минуты+секунды в секунды)
+    // Запускаем таймер
     private func startTimer() {
-        isTimerRunning = true
-        remainingSeconds = hours * 3600 + minutes * 60 + seconds
-        // Если выбрано 0 секунд — не запускаем
-        if remainingSeconds == 0 {
-            isTimerRunning = false
-            showTimerAlert = true  // Можно заменить на другой алерт
+        totalSeconds = hours * 3600 + minutes * 60 + seconds
+        if totalSeconds == 0 {
+            showTimerAlert = true  // Предупреждение о нулевом времени
+            return
         }
+        
+        isTimerRunning = true
+        remainingSeconds = totalSeconds
     }
 
-    // Останавливает таймер
+    // Останавливаем таймер
     private func stopTimer() {
         isTimerRunning = false
         remainingSeconds = 0
+        totalSeconds = 0
     }
 }
 
