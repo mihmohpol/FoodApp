@@ -3,55 +3,64 @@ internal import Combine
 
 struct ContentView: View {
     // Состояние таймера
-    @State private var timerMinutes: Int = 10          // Выбранное время (в минутах)
-    @State private var isTimerRunning: Bool = false      // Флаг: идёт ли отсчёт
-    @State private var remainingSeconds: Int = 0         // Оставшиеся секунды
-    @State private var showTimerAlert: Bool = false     // Флаг для алерта о завершении
+    @State private var hours: Int = 0          // Часы (0–23)
+    @State private var minutes: Int = 10         // Минуты (0–59)
+    @State private var seconds: Int = 0         // Секунды (0–59)
+    @State private var isTimerRunning: Bool = false
+    @State private var remainingSeconds: Int = 0
+    @State private var showTimerAlert: Bool = false
 
-    // Таймер для обновления интерфейса каждую секунду
+
+    // Таймер обновления интерфейса
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
         NavigationStack {
             ZStack {
-                // Фон
                 Color(.systemBackground)
                     .ignoresSafeArea()
 
                 VStack(spacing: 24) {
-                    // Заголовок
                     Text("Кулинарная книга")
                         .font(.title)
                         .fontWeight(.bold)
                         .padding(.top, 40)
 
-                    // Подзаголовок
                     Text("Выберите время и запустите таймер")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
 
-                    // Поле выбора времени
+                    // Трёхкомпонентный Picker: часы, минуты, секунды
                     HStack {
-                        Text("Время:")
-                            .font(.headline)
-
-                        Picker("", selection: $timerMinutes) {
-                            ForEach(1...120, id: \.self) { minutes in
-                                Text("\(minutes) мин")
+                        Picker("", selection: $hours) {
+                            ForEach(0...23, id: \.self) { hour in
+                                Text("\(hour) ч")
                             }
                         }
-                        .pickerStyle(.menu)
-                        .frame(width: 120)
+                        .pickerStyle(.wheel)
+                        .frame(width: 60)
 
-                        Text("до готовности")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
+                        Picker("", selection: $minutes) {
+                            ForEach(0...59, id: \.self) { minute in
+                                Text("\(minute) мин")
+                            }
+                        }
+                        .pickerStyle(.wheel)
+                        .frame(width: 80)
+
+                        Picker("", selection: $seconds) {
+                            ForEach(0...59, id: \.self) { second in
+                                Text("\(second) сек")
+                            }
+                        }
+                        .pickerStyle(.wheel)
+                        .frame(width: 80)
                     }
                     .padding(.horizontal, 20)
 
                     // Дисплей таймера
                     Text(formatTime(remainingSeconds))
-                        .font(.system(size: 64, weight: .light))
+                        .font(.system(size: 49, weight: .light))
                         .foregroundColor(isTimerRunning ? .primary : .secondary)
                         .padding(.vertical, 12)
                         .background(
@@ -60,7 +69,8 @@ struct ContentView: View {
                         )
                         .frame(width: 200)
 
-                    // Кнопка запуска/остановки таймера
+
+                    // Кнопка управления таймером
                     Button {
                         if isTimerRunning {
                             stopTimer()
@@ -78,9 +88,10 @@ struct ContentView: View {
                     }
                     .padding(.horizontal, 20)
 
-                    // Кнопка открытия меню рецептов
+
+                    // Кнопка меню рецептов
                     Button {
-                        // Здесь можно добавить переход к MenuView
+                        // Переход к MenuView
                     } label: {
                         Label("Выбрать блюдо", systemImage: "list.bullet")
                             .font(.callout)
@@ -91,7 +102,6 @@ struct ContentView: View {
 
                     Spacer()
                 }
-                // Обработчик таймера (каждую секунду)
                 .onReceive(timer) { _ in
                     if isTimerRunning && remainingSeconds > 0 {
                         remainingSeconds -= 1
@@ -100,7 +110,6 @@ struct ContentView: View {
                         showTimerAlert = true
                     }
                 }
-                // Алерт о завершении таймера
                 .alert("Таймер завершён!", isPresented: $showTimerAlert) {
                     Button("ОК", role: .cancel) { }
                 }
@@ -108,17 +117,23 @@ struct ContentView: View {
         }
     }
 
-    // Форматирует секунды в строку "MM:SS"
-    private func formatTime(_ seconds: Int) -> String {
-        let minutes = seconds / 60
-        let secs = seconds % 60
-        return String(format: "%02d:%02d", minutes, secs)
+    // Форматирует секунды в "HH:MM:SS"
+    private func formatTime(_ totalSeconds: Int) -> String {
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let seconds = totalSeconds % 60
+        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
     }
 
-    // Запускает таймер
+    // Запускает таймер (конвертирует часы+минуты+секунды в секунды)
     private func startTimer() {
         isTimerRunning = true
-        remainingSeconds = timerMinutes * 60  // Переводим минуты в секунды
+        remainingSeconds = hours * 3600 + minutes * 60 + seconds
+        // Если выбрано 0 секунд — не запускаем
+        if remainingSeconds == 0 {
+            isTimerRunning = false
+            showTimerAlert = true  // Можно заменить на другой алерт
+        }
     }
 
     // Останавливает таймер
@@ -128,7 +143,6 @@ struct ContentView: View {
     }
 }
 
-// Превью для Xcode
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
